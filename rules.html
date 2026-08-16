@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Система баллов и дисциплинарных взысканий</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d12;
+      --panel: #141821;
+      --panel-soft: #10141c;
+      --line: rgba(255, 255, 255, .1);
+      --text: #f4f6fb;
+      --muted: #a7afbf;
+      --accent: #8fb7ff;
+      --danger: #ff6b7a;
+      --danger-bg: rgba(255, 107, 122, .13);
+      --success: #52d67b;
+      --success-bg: rgba(82, 214, 123, .12);
+      --warn: #ffd166;
+      --warn-bg: rgba(255, 209, 102, .12);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 22px;
+      border-right: 1px solid var(--line);
+      background: rgba(11, 13, 18, .96);
+      overflow: auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.12;
+      letter-spacing: -.04em;
+    }
+
+    .lead {
+      margin: 14px 0 24px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input {
+      width: 100%;
+      height: 42px;
+      margin-bottom: 22px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+
+    input:focus { border-color: rgba(143, 183, 255, .7); }
+
+    nav { display: grid; gap: 6px; }
+    nav a {
+      padding: 9px 10px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    nav a:hover { background: var(--panel); color: var(--text); }
+
+    main { padding: 38px clamp(20px, 5vw, 64px) 70px; }
+
+    .hero {
+      max-width: 1020px;
+      margin-bottom: 34px;
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel-soft);
+    }
+
+    .hero h2 {
+      margin: 0 0 12px;
+      font-size: 30px;
+      line-height: 1.1;
+      letter-spacing: -.045em;
+    }
+
+    .hero p { max-width: 760px; margin: 0; color: var(--muted); }
+
+    .quick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .pill {
+      display: inline-flex;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .03);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    section {
+      max-width: 1020px;
+      margin-top: 36px;
+      scroll-margin-top: 28px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+    .hint { color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .rules { display: grid; gap: 10px; }
+
+    .rule {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+
+    .rule-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .num { color: var(--accent); font-weight: 900; letter-spacing: .01em; }
+    .rule-title { margin: 0; font-size: 16px; line-height: 1.35; }
+    .rule p { margin: 8px 0 0; color: var(--muted); }
+
+    .badge {
+      flex: 0 0 auto;
+      align-self: start;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .minus { color: var(--danger); background: var(--danger-bg); }
+    .plus { color: var(--success); background: var(--success-bg); }
+    .neutral { color: var(--accent); background: rgba(143, 183, 255, .12); }
+
+    .note {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      color: var(--warn);
+      background: var(--warn-bg);
+      font-size: 13px;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 900px) {
+      .layout { display: block; }
+      aside { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      main { padding-top: 24px; }
+    }
+
+    @media (max-width: 560px) {
+      nav { grid-template-columns: 1fr; }
+      .hero { padding: 22px; }
+      .hero h2 { font-size: 25px; }
+      .rule-top { display: grid; }
+      .hint { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <p class="eyebrow">Внутренний регламент</p>
+      <h1>Система баллов и дисциплинарных взысканий</h1>
+      <p class="lead">Структура по ролям: общие правила, разработчики, тимлид, тестировщик, дизайнеры и деплой.</p>
+      <input id="search" type="search" placeholder="Поиск по правилам">
+      <nav aria-label="Разделы">
+        <a href="#general">1. Общие пункты</a>
+        <a href="#dev-minus">2. Разработчики: минусы</a>
+        <a href="#dev-plus">3. Разработчики: плюсы</a>
+        <a href="#lead-minus">4. Тимлид: минусы</a>
+        <a href="#tester-minus">5. Тестировщик: минусы</a>
+        <a href="#design-plus">6. Дизайнеры: плюсы</a>
+        <a href="#design-minus">7. Дизайнеры: минусы</a>
+        <a href="#deploy-minus">8. Деплой: минусы</a>
+      </nav>
+    </aside>
+
+    <main>
+      <div class="hero">
+        <p class="eyebrow">Ролевая структура</p>
+        <h2>Правила разделены по зонам ответственности</h2>
+        <p>Паша указан как тимлид, Тимоха как деплоер, Макс как тестировщик. У каждой роли свои минусы и плюсы идут рядом: сначала минусы, потом плюсы. Для дизайнеров плюсы вынесены перед минусами.</p>
+        <div class="quick">
+          <span class="pill">Старт: 50 баллов</span>
+          <span class="pill">Общие правила отдельно</span>
+          <span class="pill">Разработчики отдельно</span>
+          <span class="pill">Деплой отдельно</span>
+        </div>
+      </div>
+
+      <section id="general">
+        <div class="section-head"><h2>1. Общие пункты</h2><span class="hint">Для всех</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.1.</span> Система баллов</h3><span class="badge plus">50 баллов</span></div><p>Изначально дается 50 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.2.</span> Уход в минус</h3><span class="badge minus">взыскание</span></div><p>Уход в минус = минус к зарплате либо другие дисциплинарные взыскания.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.3.</span> Рабочий день</h3></div><p>Рабочий день начинается в 10 утра по МСК. Марат — 11 МСК. Дима — 11 МСК.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.4.</span> Опоздания</h3><span class="badge minus">-2 / -1</span></div><p>В случае частых опозданий без уважительной причины: -2 балла. Если предупредили и причина уважительная: 0 баллов. Не предупредили, но причина уважительная: -1 балл.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.5.</span> Обед</h3><span class="badge minus">-2 / час</span></div><p>У каждого есть 1 час на обед. Предупреждайте в ТГ и уходите. Потом обязательно по приходу отписывайте, что вернулись. Опоздание с обеда: -2 балла за каждый час опоздания. Не предупредил: -1 балл.</p><div class="note">Если вы берете час на обед — рабочий день до 19:00 МСК.</div></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.6.</span> Отчет</h3><span class="badge minus">-2 балла</span></div><p>Если по окончанию рабочих процессов не выслан отчет о проделанной работе: -2 балла.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.7.</span> Не отработали рабочий день</h3><span class="badge minus">-100 баллов</span></div><p>Не отработали рабочий день: -100 баллов. Можно закрыть отработкой, если это возможно.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.8.</span> Не выполнение планов</h3><span class="badge minus">-5 баллов</span></div><p>Не выполнение планов, назначенных начальством: -5 баллов. Если начальство не раздало таски или вы не знаете, что делать, делайте то, что считаете нужным, до того, пока на связи не появится один из нас.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.9.</span> Клауд</h3></div><p>Если план не выполняется из-за оплаты клауда — это проблема начальства.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.10.</span> Косяк за прошлый день</h3></div><p>Если случился косяк за прошлый день, и вы не успели что-то сделать, обязательно сообщайте об этом в тот же день. На следующий день мы строим планы на вас как на сотрудника и не учитываем косяки прошлого дня, если вы о них не известили.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.11.</span> Форс-мажоры в работе</h3><span class="badge minus">-5 / -5</span></div><p>В случае форс-мажоров, нерешаемого бага или чего-то похожего: 1.5 часа пробуете сами, 1.5 часа с Пашей, далее идете к начальству. Если начальство решает проблему менее чем за 30 минут: -5 баллов Павлу, -5 баллов деву.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.12.</span> Переработки</h3></div><p>За переработки баллы начисляются в конце недели на созвоне one to one. Часы не считаются, считается именно выполненная в плюс работа.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.13.</span> Бан серой части iOS</h3><span class="badge neutral">расчет в конце месяца</span></div><p>Бан серой части: для iOS будет все решаться на дистанции и в конце месяца.</p><div class="note">Если у вас будет меньшее количество залитых прил, чем у других, в процентном соотношении, вы получаете минус баллы, которые будут рассчитываться в конце месяца исходя из масштабов проблемы. Если вы в топе по залитию, то дополнительно к плюс баллам по залитию прилы вы получаете еще плюс баллы за инициативность и старательность в обфускации.</div></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">1.14.</span> Содействие увеличению прибыли компании</h3><span class="badge plus">+1–1000</span></div><p>Содействие увеличению прибыли компании: +1–1000 баллов.</p><div class="note">Пример: PPO / Product page optimization для iOS. Мы залили ASO не через новый билд, а через PPO, и в итоге приложение залилось → прибыль.</div></article>
+        </div>
+      </section>
+
+
+      <section id="dev-minus">
+        <div class="section-head"><h2>2. Разработчики: минусы</h2><span class="hint">Код, баны, обфускация, фиксы</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.1.</span> Корп. расследование по банам</h3><span class="badge neutral">анализ</span></div><p>Проводится корп. расследование. Проверяется выполнение правил безопасности для приложения. Выдвигаются причины бана игры. В зависимости от предполагаемых причин бана назначаются минус баллы.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.2.</span> Бан приложения менее 24 часов</h3><span class="badge minus">-50 баллов</span></div><p>Бан приложения, если прошло менее 24 часов с залива и ASO не доливалось: этот тип относится к первому пункту.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.3.</span> Бан приложения больше 24 часов и меньше 7 дней</h3><span class="badge minus">-5 баллов</span></div><p>Бан приложения, если прошло больше 24 часов и меньше 7 дней: -5 баллов + анализ.</p><div class="note">После такого бана также проводится анализ причин, чтобы понять, связано ли это с кодом, обфускацией, ASO, белой частью или другими правилами безопасности.</div></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.4.</span> Бан на моменте ASO</h3><span class="badge minus">-10 баллов</span></div><p>Бан на моменте ASO: -10 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.5.</span> Бан белой части</h3><span class="badge minus">-45 баллов</span></div><p>Бан белой части — проводится корп. расследование. Если вина дева выявляется, дев получает -45 баллов.</p><div class="note">Если вина дева не выявлена, ответственность по этому пункту переносится на дизайн: дизайнер получает -50 баллов за грубое нарушение обфускации изображений.</div></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.6.</span> Грубые нарушения обфускации / уникализации кода</h3><span class="badge minus">-50 баллов</span></div><p>Грубые нарушения правил обфускации / уникализации кода: 1 раз за месяц — обнуление сейв поинтов. 2 раз — -50 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.7.</span> Мелкие нарушения обфускации</h3><span class="badge minus">-25 баллов</span></div><p>Мелкие нарушения правил обфускации, преступная халатность в обфускации кода: -25 баллов.</p><div class="note">К этому относятся ситуации, где обфускация сделана халатно и из-за этого повышается риск бана / проблем с уникализацией.</div></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.8.</span> 2 и более этап доработок по тестам Макса</h3><span class="badge minus">-2 балла</span></div><p>Если ваша прила уходит на 2 и более этап доработок по тестам Макса, вы получаете -2 балла за каждый последующий этап ретеста.</p><div class="note">Исключения: баг не был освещен в предыдущем фидбеке от Макса; баги, которые невозможно проверить на вашем устройстве. В этом случае вы должны отдать приложение на точечное тестирование Максу и ждать фидбека по фиксу бага.</div></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.9.</span> Повторные правки iOS</h3><span class="badge minus">-5 баллов</span></div><p>По iOS Макс не участвует в тестировании временно. Вы получаете по -5 баллов за вторую и более отправку на правки.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">2.10.</span> Забыли о фиксах</h3><span class="badge minus">-2 балла</span></div><p>Забыли о фиксах: -2 балла.</p></article>
+        </div>
+      </section>
+
+      <section id="dev-plus">
+        <div class="section-head"><h2>3. Разработчики: плюсы</h2><span class="hint">Успешные фиксы, iOS, ресерч</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">3.1.</span> Приложение залилось и отжило гарантию</h3><span class="badge plus">+50 баллов</span></div><p>Приложение залилось и отжило гарантию: +50 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">3.2.</span> iOS залилось и отжило гарантию</h3><span class="badge plus">+100 баллов</span></div><p>Приложение залилось и отжило гарантию iOS: +100 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">3.3.</span> iOS</h3><span class="badge plus">+8 баллов</span></div><p>iOS: +8 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">3.4.</span> Тестирование Макса с первого раза</h3><span class="badge plus">+5 баллов</span></div><p>За успешное прохождение тестирования Макса с первого раза, при этом тестирование клиента также прошло с первого раза либо было оспорено: +5 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">3.5.</span> Game changer / ресерч</h3><span class="badge plus">0–1000</span></div><p>Нашли что-то новое и оповестили нас, провели ресерч, дали инфу game changer, обучились чему-то сами: от 0 до 1000 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">3.6.</span> Нет дисциплинарных взысканий</h3><span class="badge plus">+10 баллов</span></div><p>Отсутствие дисциплинарных взысканий и проблем с отсутствием и опозданиями: +10 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">3.7.</span> Все задачи выполнены за неделю</h3><span class="badge plus">+10 баллов</span></div><p>Выполнение всех поставленных задач без проблем на протяжении недели: +10 баллов.</p></article>
+        </div>
+      </section>
+
+      <section id="lead-minus">
+        <div class="section-head"><h2>4. Тимлид: Паша — минусы</h2><span class="hint">Контроль тестов, фиксов и iOS</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">4.1.</span> Пропуск фидбека по тестам</h3><span class="badge minus">-2 балла</span></div><p>-2 балла за пропуск фидбека по тестам: апрув / правки.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">4.2.</span> Готовый iOS не отдан в тесты</h3><span class="badge minus">-2 балла</span></div><p>-2 балла за готовый iOS, не отданный в тесты.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">4.3.</span> iOS долго не принимают тестирование</h3><span class="badge minus">-2 балла</span></div><p>-2 балла за iOS, по которому долго не принимают тестирование: не отправил инвайты, не пропушил Юру.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">4.4.</span> Форс-мажор решило начальство</h3><span class="badge minus">-5 баллов</span></div><p>Если начальство решает проблему менее чем за 30 минут: -5 баллов Павлу.</p></article>
+        </div>
+      </section>
+
+
+
+      <section id="tester-minus">
+        <div class="section-head"><h2>5. Тестировщик: Макс — минусы</h2><span class="hint">Тесты, фидбек, клиентские правки</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">5.1.</span> Правки от клиента</h3><span class="badge minus">-10 баллов</span></div><p>Если приложение получает правки от клиента, и эти правки не являются новыми для нашей команды и проецируются на телефоне Макса, то Макс получает -10 баллов.</p><div class="note">В таком случае Паша должен оповестить нас в этот же момент. Мы в свою очередь должны дать ему инфу о приоритете фиксов и сколько по нашим расчетам должен занять фикс. Это время будет учитываться как отработанное в момент дневного отчета, и недовыполненная работа будет апрувнута в соответствии со временем, которое насчитал один из начальников. Если сотрудник не согласен со временем на фикс бага, он может оспорить, приложив соответствующие аргументы.</div></article>
+        </div>
+      </section>
+
+      <section id="design-plus">
+        <div class="section-head"><h2>6. Дизайнеры: плюсы</h2><span class="hint">Сначала плюсы для дизайна</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">6.1.</span> Game changer / ресерч</h3><span class="badge plus">0–1000</span></div><p>Нашли что-то новое и оповестили нас, провели ресерч, дали инфу game changer, обучились чему-то сами: от 0 до 1000 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">6.2.</span> Нет дисциплинарных взысканий</h3><span class="badge plus">+10 баллов</span></div><p>Отсутствие дисциплинарных взысканий и проблем с отсутствием и опозданиями: +10 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">6.3.</span> Все задачи выполнены за неделю</h3><span class="badge plus">+10 баллов</span></div><p>Выполнение всех поставленных задач без проблем на протяжении недели: +10 баллов.</p></article>
+        </div>
+      </section>
+
+      <section id="design-minus">
+        <div class="section-head"><h2>7. Дизайнеры: минусы</h2><span class="hint">Картинки, белая часть, дисциплина</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">7.1.</span> Бан белой части без вины дева</h3><span class="badge minus">-50 баллов</span></div><p>Если вины дева не выявлено, дизайнер получает -50 баллов за грубое нарушение обфускации изображений.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">7.2.</span> Не пришел вовремя</h3><span class="badge minus">-5 баллов</span></div><p>Не пришел вовремя: -5 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">7.3.</span> Не ответил в течение 25 минут</h3><span class="badge minus">-5 баллов</span></div><p>Не ответил в течение 25 минут без предупреждения о форс-мажорах: -5 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">7.4.</span> Не выполнил таску</h3><span class="badge minus">-10 баллов</span></div><p>Не выполнил таску: -10 баллов.</p></article>
+        </div>
+      </section>
+
+      <section id="deploy-minus">
+        <div class="section-head"><h2>8. Деплой: Тимоха — минусы</h2><span class="hint">Кто заливает приложения</span></div>
+        <div class="rules">
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">8.1.</span> Не пришел вовремя</h3><span class="badge minus">-5 баллов</span></div><p>Не пришел вовремя: -5 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">8.2.</span> Не выполнил таску</h3><span class="badge minus">-10 баллов</span></div><p>Не выполнил таску: -10 баллов.</p></article>
+          <article class="rule"><div class="rule-top"><h3 class="rule-title"><span class="num">8.3.</span> Не ответил в рабочее время</h3><span class="badge minus">-5 баллов</span></div><p>Не ответил в рабочее время в течение 25 минут: -5 баллов.</p></article>
+        </div>
+      </section>
+
+
+  <script>
+    const input = document.querySelector('#search');
+    const rules = Array.from(document.querySelectorAll('.rule'));
+    const sections = Array.from(document.querySelectorAll('section'));
+
+    input.addEventListener('input', () => {
+      const query = input.value.trim().toLowerCase();
+      rules.forEach((rule) => {
+        const text = rule.innerText.toLowerCase();
+        rule.classList.toggle('hidden', query && !text.includes(query));
+      });
+      sections.forEach((section) => {
+        const visible = Array.from(section.querySelectorAll('.rule')).some((rule) => !rule.classList.contains('hidden'));
+        section.classList.toggle('hidden', query && !visible);
+      });
+    });
+  </script>
+</body>
+</html>

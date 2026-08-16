@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Учет баллов команды</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d12;
+      --panel: #141821;
+      --panel-2: #10141c;
+      --line: rgba(255, 255, 255, .1);
+      --text: #f4f6fb;
+      --muted: #a7afbf;
+      --accent: #8fb7ff;
+      --danger: #ff6b7a;
+      --danger-bg: rgba(255, 107, 122, .13);
+      --success: #52d67b;
+      --success-bg: rgba(82, 214, 123, .12);
+      --warn: #ffd166;
+      --warn-bg: rgba(255, 209, 102, .12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    .shell {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.04;
+      letter-spacing: -.055em;
+    }
+
+    .lead {
+      max-width: 740px;
+      margin: 12px 0 0;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      border-color: rgba(143, 183, 255, .55);
+    }
+
+    .btn.primary {
+      border-color: rgba(143, 183, 255, .5);
+      background: rgba(143, 183, 255, .16);
+    }
+
+    .btn.danger {
+      border-color: rgba(255, 107, 122, .35);
+      color: var(--danger);
+      background: var(--danger-bg);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 18px 18px 0;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.025em;
+    }
+
+    .panel-subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    form, .panel-body {
+      padding: 18px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 13px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      background: var(--panel-2);
+      color: var(--text);
+    }
+
+    input, select {
+      height: 40px;
+      padding: 0 11px;
+    }
+
+    textarea {
+      min-height: 78px;
+      padding: 10px 11px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(143, 183, 255, .65);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -.04em;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+    }
+
+    table {
+      width: 100%;
+      min-width: 940px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px 13px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .name {
+      font-weight: 900;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .plus {
+      color: var(--success);
+      background: var(--success-bg);
+    }
+
+    .minus {
+      color: var(--danger);
+      background: var(--danger-bg);
+    }
+
+    .neutral {
+      color: var(--accent);
+      background: rgba(143, 183, 255, .12);
+    }
+
+    .summary {
+      display: grid;
+      gap: 8px;
+    }
+
+    .person {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .person:last-child {
+      border-bottom: 0;
+    }
+
+    .person small {
+      display: block;
+      color: var(--muted);
+    }
+
+    .empty {
+      padding: 24px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .delete {
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    @media (max-width: 1060px) {
+      .grid { grid-template-columns: 1fr; }
+      .stats, .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 660px) {
+      .shell { padding: 18px; }
+      .top { grid-template-columns: 1fr; }
+      .actions { justify-content: flex-start; }
+      .row, .stats, .filters { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <div>
+        <p class="eyebrow">Points tracker</p>
+        <h1>Учет баллов команды</h1>
+        <p class="lead">Заноси плюсы и минусы за день, неделю или месяц. Данные сохраняются в браузере через localStorage, можно экспортировать JSON/CSV и импортировать обратно.</p>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="rules.html" target="_blank" rel="noreferrer">Открыть регламент</a>
+        <button class="btn" id="exportJson">Export JSON</button>
+        <button class="btn" id="exportCsv">Export CSV</button>
+        <button class="btn" id="importBtn">Import JSON</button>
+        <button class="btn danger" id="resetBtn">Очистить</button>
+        <input class="file-input" id="importFile" type="file" accept="application/json">
+      </div>
+    </header>
+
+    <section class="stats" id="stats"></section>
+
+    <div class="grid">
+      <aside class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Новая запись</h2>
+          <p class="panel-subtitle">Одна строка = одно начисление или списание.</p>
+        </div>
+        <form id="entryForm">
+          <div class="row">
+            <div class="field">
+              <label for="date">Дата</label>
+              <input id="date" type="date" required>
+            </div>
+            <div class="field">
+              <label for="period">Период</label>
+              <select id="period">
+                <option value="day">День</option>
+                <option value="week">Неделя</option>
+                <option value="month">Месяц</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="person">Сотрудник</label>
+              <input id="person" list="peopleList" placeholder="Например: Артем" required>
+              <datalist id="peopleList"></datalist>
+            </div>
+            <div class="field">
+              <label for="role">Роль</label>
+              <select id="role">
+                <option>Разработчик</option>
+                <option>Тимлид</option>
+                <option>Тестировщик</option>
+                <option>Дизайнер</option>
+                <option>Деплоер</option>
+                <option>Другое</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="type">Тип</label>
+              <select id="type">
+                <option value="minus">Минус</option>
+                <option value="plus">Плюс</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="points">Баллы</label>
+              <input id="points" type="number" min="0" step="1" placeholder="5" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="reason">Причина / пункт</label>
+            <select id="reason"></select>
+          </div>
+
+          <div class="field">
+            <label for="customReason">Своя причина</label>
+            <input id="customReason" placeholder="Если пункта нет в списке">
+          </div>
+
+          <div class="field">
+            <label for="comment">Комментарий</label>
+            <textarea id="comment" placeholder="Коротко: что случилось, ссылка на задачу, приложение, причина"></textarea>
+          </div>
+
+          <button class="btn primary" type="submit">Добавить запись</button>
+        </form>
+      </aside>
+
+      <main>
+        <section class="filters">
+          <div class="field">
+            <label for="filterPeriod">Фильтр периода</label>
+            <select id="filterPeriod">
+              <option value="all">Все</option>
+              <option value="day">День</option>
+              <option value="week">Неделя</option>
+              <option value="month">Месяц</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterFrom">С даты</label>
+            <input id="filterFrom" type="date">
+          </div>
+          <div class="field">
+            <label for="filterTo">По дату</label>
+            <input id="filterTo" type="date">
+          </div>
+          <div class="field">
+            <label for="filterPerson">Сотрудник</label>
+            <select id="filterPerson"><option value="all">Все</option></select>
+          </div>
+          <div class="field">
+            <label for="filterType">Тип</label>
+            <select id="filterType">
+              <option value="all">Все</option>
+              <option value="plus">Плюсы</option>
+              <option value="minus">Минусы</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="panel" style="margin-bottom: 18px;">
+          <div class="panel-head">
+            <h2 class="panel-title">Итоги по людям</h2>
+            <p class="panel-subtitle">Стартовая база считается как 50 баллов + все плюсы - все минусы.</p>
+          </div>
+          <div class="panel-body summary" id="summary"></div>
+        </section>
+
+        <section class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Период</th>
+                <th>Сотрудник</th>
+                <th>Роль</th>
+                <th>Баллы</th>
+                <th>Причина</th>
+                <th>Комментарий</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="entries"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const storageKey = 'team-points-tracker-v1';
+    const basePoints = 50;
+
+    const defaultPeople = [
+      { name: 'Паша', role: 'Тимлид' },
+      { name: 'Макс', role: 'Тестировщик' },
+      { name: 'Тимоха', role: 'Деплоер' },
+    ];
+
+    const reasons = {
+      minus: [
+        ['Бан приложения менее 24 часов', 50],
+        ['Бан приложения больше 24 часов и меньше 7 дней', 5],
+        ['Бан на моменте ASO', 10],
+        ['Бан белой части, вина дева', 45],
+        ['Грубое нарушение обфускации / уникализации', 50],
+        ['Мелкое нарушение обфускации', 25],
+        ['2 и более этап доработок по тестам Макса', 2],
+        ['Повторная отправка iOS на правки', 5],
+        ['Забыли о фиксах', 2],
+        ['Не отработали рабочий день', 100],
+        ['Опоздание', 2],
+        ['Не предупредил', 1],
+        ['Опоздание с обеда за час', 2],
+        ['Не отправил дневной отчет', 2],
+        ['Не выполнил план начальства', 5],
+        ['Пропуск фидбека по тестам', 2],
+        ['Готовый iOS не отдан в тесты', 2],
+        ['iOS долго не принимают тестирование', 2],
+        ['Правки от клиента, не новые для команды', 10],
+        ['Дизайн: бан белой части без вины дева', 50],
+        ['Не ответил 25 минут', 5],
+        ['Не выполнил таску', 10],
+      ],
+      plus: [
+        ['Приложение залилось и отжило гарантию', 50],
+        ['iOS залилось и отжило гарантию', 100],
+        ['Тестирование Макса с первого раза', 5],
+        ['iOS', 8],
+        ['Отсутствие дисциплинарных взысканий', 10],
+        ['Все задачи выполнены за неделю', 10],
+        ['Game changer / ресерч / обучение', 100],
+        ['Содействие увеличению прибыли компании', 100],
+        ['Переработки', 0],
+      ],
+    };
+
+    const els = {
+      form: document.querySelector('#entryForm'),
+      date: document.querySelector('#date'),
+      period: document.querySelector('#period'),
+      person: document.querySelector('#person'),
+      role: document.querySelector('#role'),
+      type: document.querySelector('#type'),
+      points: document.querySelector('#points'),
+      reason: document.querySelector('#reason'),
+      customReason: document.querySelector('#customReason'),
+      comment: document.querySelector('#comment'),
+      peopleList: document.querySelector('#peopleList'),
+      stats: document.querySelector('#stats'),
+      summary: document.querySelector('#summary'),
+      entries: document.querySelector('#entries'),
+      filterPeriod: document.querySelector('#filterPeriod'),
+      filterFrom: document.querySelector('#filterFrom'),
+      filterTo: document.querySelector('#filterTo'),
+      filterPerson: document.querySelector('#filterPerson'),
+      filterType: document.querySelector('#filterType'),
+      exportJson: document.querySelector('#exportJson'),
+      exportCsv: document.querySelector('#exportCsv'),
+      importBtn: document.querySelector('#importBtn'),
+      importFile: document.querySelector('#importFile'),
+      resetBtn: document.querySelector('#resetBtn'),
+    };
+
+    let data = load();
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function load() {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return { entries: [] };
+      try {
+        const parsed = JSON.parse(raw);
+        return { entries: Array.isArray(parsed.entries) ? parsed.entries : [] };
+      } catch {
+        return { entries: [] };
+      }
+    }
+
+    function save() {
+      localStorage.setItem(storageKey, JSON.stringify(data, null, 2));
+    }
+
+    function setReasons() {
+      const list = reasons[els.type.value];
+      els.reason.innerHTML = list.map(([name, points]) => `<option value="${escapeHtml(name)}" data-points="${points}">${escapeHtml(name)}${points ? ` (${points})` : ''}</option>`).join('');
+      setDefaultPoints();
+    }
+
+    function setDefaultPoints() {
+      const option = els.reason.selectedOptions[0];
+      const value = option ? Number(option.dataset.points) : 0;
+      if (value > 0) els.points.value = value;
+    }
+
+    function knownPeople() {
+      const map = new Map(defaultPeople.map((p) => [p.name, p.role]));
+      data.entries.forEach((entry) => {
+        if (!map.has(entry.person)) map.set(entry.person, entry.role);
+      });
+      return Array.from(map, ([name, role]) => ({ name, role })).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    }
+
+    function updatePeopleControls() {
+      const people = knownPeople();
+      els.peopleList.innerHTML = people.map((p) => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.role)}</option>`).join('');
+      els.filterPerson.innerHTML = '<option value="all">Все</option>' + people.map((p) => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('');
+    }
+
+    function filteredEntries() {
+      return data.entries.filter((entry) => {
+        if (els.filterPeriod.value !== 'all' && entry.period !== els.filterPeriod.value) return false;
+        if (els.filterType.value !== 'all' && entry.type !== els.filterType.value) return false;
+        if (els.filterPerson.value !== 'all' && entry.person !== els.filterPerson.value) return false;
+        if (els.filterFrom.value && entry.date < els.filterFrom.value) return false;
+        if (els.filterTo.value && entry.date > els.filterTo.value) return false;
+        return true;
+      }).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+    }
+
+    function personTotals(entries) {
+      const totals = new Map();
+      entries.forEach((entry) => {
+        if (!totals.has(entry.person)) {
+          totals.set(entry.person, { role: entry.role, plus: 0, minus: 0, total: basePoints, count: 0 });
+        }
+        const item = totals.get(entry.person);
+        item.role = entry.role;
+        item.count += 1;
+        if (entry.type === 'plus') {
+          item.plus += entry.points;
+          item.total += entry.points;
+        } else {
+          item.minus += entry.points;
+          item.total -= entry.points;
+        }
+      });
+
+      knownPeople().forEach((person) => {
+        if (!totals.has(person.name)) {
+          totals.set(person.name, { role: person.role, plus: 0, minus: 0, total: basePoints, count: 0 });
+        }
+      });
+
+      return Array.from(totals, ([name, value]) => ({ name, ...value })).sort((a, b) => b.total - a.total);
+    }
+
+    function renderStats(entries) {
+      const plus = entries.filter((e) => e.type === 'plus').reduce((sum, e) => sum + e.points, 0);
+      const minus = entries.filter((e) => e.type === 'minus').reduce((sum, e) => sum + e.points, 0);
+      const people = personTotals(entries);
+      const avg = people.length ? Math.round(people.reduce((sum, p) => sum + p.total, 0) / people.length) : basePoints;
+      els.stats.innerHTML = [
+        ['Записей', entries.length],
+        ['Плюсов', `+${plus}`],
+        ['Минусов', `-${minus}`],
+        ['Средний баланс', avg],
+      ].map(([label, value]) => `<div class="stat"><span>${label}</span><strong>${value}</strong></div>`).join('');
+    }
+
+    function renderSummary(entries) {
+      const people = personTotals(entries);
+      if (!people.length) {
+        els.summary.innerHTML = '<div class="empty">Пока нет сотрудников.</div>';
+        return;
+      }
+      els.summary.innerHTML = people.map((person) => {
+        const status = person.total < 0 ? 'minus' : person.total > basePoints ? 'plus' : 'neutral';
+        return `<div class="person">
+          <div><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.role)} · +${person.plus} / -${person.minus} · записей: ${person.count}</small></div>
+          <span class="badge ${status}">${person.total} баллов</span>
+        </div>`;
+      }).join('');
+    }
+
+    function renderEntries(entries) {
+      if (!entries.length) {
+        els.entries.innerHTML = '<tr><td colspan="8" class="empty">Записей пока нет. Добавь первую слева.</td></tr>';
+        return;
+      }
+
+      els.entries.innerHTML = entries.map((entry) => {
+        const sign = entry.type === 'plus' ? '+' : '-';
+        const cls = entry.type === 'plus' ? 'plus' : 'minus';
+        return `<tr>
+          <td>${escapeHtml(entry.date)}</td>
+          <td>${periodLabel(entry.period)}</td>
+          <td><span class="name">${escapeHtml(entry.person)}</span></td>
+          <td><span class="muted">${escapeHtml(entry.role)}</span></td>
+          <td><span class="badge ${cls}">${sign}${entry.points}</span></td>
+          <td>${escapeHtml(entry.reason)}</td>
+          <td class="muted">${escapeHtml(entry.comment || '')}</td>
+          <td><button class="delete" data-id="${entry.id}">Удалить</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function render() {
+      updatePeopleControls();
+      const entries = filteredEntries();
+      renderStats(entries);
+      renderSummary(entries);
+      renderEntries(entries);
+    }
+
+    function periodLabel(period) {
+      return { day: 'День', week: 'Неделя', month: 'Месяц' }[period] || period;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+      }[char]));
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      return `"${String(value ?? '').replace(/"/g, '""')}"`;
+    }
+
+    els.form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const selected = els.reason.value;
+      const custom = els.customReason.value.trim();
+      const person = els.person.value.trim();
+      const points = Math.abs(Number(els.points.value));
+      if (!person || !points) return;
+
+      data.entries.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        createdAt: new Date().toISOString(),
+        date: els.date.value || today(),
+        period: els.period.value,
+        person,
+        role: els.role.value,
+        type: els.type.value,
+        points,
+        reason: custom || selected,
+        comment: els.comment.value.trim(),
+      });
+
+      save();
+      els.customReason.value = '';
+      els.comment.value = '';
+      render();
+    });
+
+    els.type.addEventListener('change', setReasons);
+    els.reason.addEventListener('change', setDefaultPoints);
+    [els.filterPeriod, els.filterFrom, els.filterTo, els.filterPerson, els.filterType].forEach((el) => el.addEventListener('input', render));
+
+    els.entries.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-id]');
+      if (!button) return;
+      if (!confirm('Удалить эту запись?')) return;
+      data.entries = data.entries.filter((entry) => entry.id !== button.dataset.id);
+      save();
+      render();
+    });
+
+    els.person.addEventListener('change', () => {
+      const match = knownPeople().find((p) => p.name === els.person.value.trim());
+      if (match) els.role.value = match.role;
+    });
+
+    els.exportJson.addEventListener('click', () => {
+      download(`points-${today()}.json`, JSON.stringify(data, null, 2), 'application/json');
+    });
+
+    els.exportCsv.addEventListener('click', () => {
+      const header = ['date', 'period', 'person', 'role', 'type', 'points', 'reason', 'comment'];
+      const rows = [header.join(',')].concat(data.entries.map((entry) => header.map((key) => csvEscape(entry[key])).join(',')));
+      download(`points-${today()}.csv`, rows.join('\\n'), 'text/csv;charset=utf-8');
+    });
+
+    els.importBtn.addEventListener('click', () => els.importFile.click());
+    els.importFile.addEventListener('change', async () => {
+      const file = els.importFile.files[0];
+      if (!file) return;
+      const parsed = JSON.parse(await file.text());
+      if (!Array.isArray(parsed.entries)) {
+        alert('JSON должен содержать массив entries.');
+        return;
+      }
+      data = { entries: parsed.entries };
+      save();
+      render();
+    });
+
+    els.resetBtn.addEventListener('click', () => {
+      if (!confirm('Точно удалить все записи из браузера? Перед этим лучше сделать Export JSON.')) return;
+      data = { entries: [] };
+      save();
+      render();
+    });
+
+    els.date.value = today();
+    setReasons();
+    render();
+  </script>
+</body>
+</html>
